@@ -1,0 +1,73 @@
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.security.SecureRandom;
+import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import org.mindrot.jbcrypt.BCrypt;
+
+public class AESFileEncryption {
+
+    public static void encrypt(String password, String fileToEncrypt, String encryptedFile) throws Exception {
+        //Generate a random salt and use it to derive the key from the password
+        SecureRandom random = new SecureRandom();
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(12, salt));
+        byte[] key = hashedPassword.getBytes("UTF-8");
+
+        // Create a new AES cipher
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+        GCMParameterSpec spec = new GCMParameterSpec(128, salt);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, spec);
+
+        FileInputStream inputStream = new FileInputStream(fileToEncrypt);
+        byte[] inputBytes = new byte[(int) new File(fileToEncrypt).length()];
+        inputStream.read(inputBytes);
+
+        byte[] cipherText = cipher.doFinal(inputBytes);
+
+        FileOutputStream outputStream = new FileOutputStream(encryptedFile);
+        outputStream.write(cipherText);
+        outputStream.close();
+    }
+
+    public static void decrypt(String password, String fileToDecrypt, String decryptedFile) throws Exception {
+        //Read the salt from the encrypted file
+        FileInputStream inputStream = new FileInputStream(fileToDecrypt);
+        byte[] salt = new byte[16];
+        inputStream.read(salt);
+
+        //Derive the key from the password using the salt
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(12, salt));
+        byte[] key = hashedPassword.getBytes("UTF-8");
+
+        // Create a new AES cipher
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+        GCMParameterSpec spec = new GCMParameterSpec(128, salt);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey, spec);
+
+        byte[] cipherText = new byte[(int) new File(fileToDecrypt).length() - 16];
+        inputStream.read(cipherText);
+
+        byte[] plainText = cipher.doFinal(cipherText);
+
+        FileOutputStream outputStream = new FileOutputStream(decryptedFile);
+        outputStream.write(plainText);
+        outputStream.close();
+    }
+	
+    public static void main(String[] args) throws Exception {
+        String password = "Your secret password";
+        String fileToEncrypt = "file_to_encrypt.txt";
+        String encryptedFile = "encrypted_file.txt";
+        encrypt(password, fileToEncrypt, encryptedFile);
+
+        String fileToDecrypt = "encrypted_file.txt";
+        String decryptedFile = "decrypted_file.txt";
+        decrypt(password, fileToDecrypt, decryptedFile);
+    }
+}
+
