@@ -25,12 +25,12 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav">
-            <li class="nav-item p-2 px-2">
+            <!-- <li class="nav-item p-2 px-2">
               <a class="nav-link active" aria-current="page" href="#">Home</a>
             </li>
             <li class="nav-item p-2 px-2">
               <a class="nav-link active" href="#">About</a>
-            </li>
+            </li> -->
             <!-- <div class="d-flex justify-content-end">  
                     <li class="nav-item p-2 ">
                         <div class="nav-link active ">
@@ -56,10 +56,13 @@
 
   </div>
   <div class="files">
-    <input type="file">
+    <input type="file" id="fileInput"><br>
+    <label for="password">Password:</label>
+    <input type="password" id="passwordInput">
+    <br>
     <div class="buttocks">
-      <button type="button" id="file" class="btn btn-success">Encrypt</button>
-      <button type="button" id="file" class="btn btn-danger">decrypt</button>
+      <button type="button" class="btn btn-success" id="encrypt-button" onclick="encrypt()">Encrypt</button>
+      <button type="button" class="btn btn-danger" id="decrypt-button" onclick="decrypt()">Decrypt</button>
     </div>
 
   </div>
@@ -76,8 +79,37 @@
   <script type="module" src="firebase.js"></script>
 
   <script type="module" src="welcome.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+  <script>
+    function encrypt() {
+      const file = fileInput.files[0];
+      const password = passwordInput.value;
+      const reader = new FileReader();
+      if (!file || !password) {
+        console.log("Please select a file and enter a password");
+      }
+  
+      reader.onload = (e) => {
+        const data = e.target.result;
+        const encryptedData = CryptoJS.AES.encrypt(data, password);
+        const encryptedDataString = encryptedData.toString();
+  
+        const blob = new Blob([encryptedDataString], { type: "application/octet-stream" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style = "display: none";
+        a.href = url;
+        a.download = file.name + ".encrypted";
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        status.innerHTML = "File encrypted and downloaded as " + file.name + ".encrypted";
+      };
+      reader.readAsText(file);
+    }
+  </script>
 
-
+  </script>
 </body>
 
 </html>
